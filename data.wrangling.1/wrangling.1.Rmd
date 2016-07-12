@@ -109,5 +109,5 @@ Include your code, the original data as a CSV file *refine_original.csv*, and th
 
 ```{r}
 data.final <- data.w.dummy %>% arrange(desc(full_address))
-write.csv(data.final, file = "refine_clean.csv")
+write.csv(data.final, file = "refine_clean.csv",quote=F,row.names=F)
 ```
