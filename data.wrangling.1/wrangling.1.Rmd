@@ -7,7 +7,7 @@ output: html_document
 
 # Data Wrangling Exercise 1: Basic Data Manipulation
 
-In this exercise, you'll work with a toy data set showing product purchases from an electronics store. While the data set is small and simple, it still illustrates many of the challenges you have to address in real-world data wrangling! The data set and exercise are inspired by [linked phrase](http://d3-media.blogspot.nl/2013/11/how-to-refine-your-data.html).
+In this exercise, you'll work with a toy data set showing product purchases from an electronics store. While the data set is small and simple, it still illustrates many of the challenges you have to address in real-world data wrangling! The data set and exercise are inspired by [this blog post](http://d3-media.blogspot.nl/2013/11/how-to-refine-your-data.html).
 
 **Getting started**
 
