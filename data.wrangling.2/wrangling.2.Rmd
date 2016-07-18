@@ -78,6 +78,7 @@ glimpse(data.clean)
 ```
 
 ### 5: Submit the project on Github
+
 Include your code, the original data as a CSV file *titanic_original.csv*, and the cleaned up data as a CSV file called *titanic_clean.csv*.
 
 ```{r}
