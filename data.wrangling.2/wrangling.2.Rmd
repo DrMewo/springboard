@@ -72,8 +72,14 @@ You notice that many passengers don't have a cabin number associated with them.
 You have a hunch that the fact that the cabin number is missing might be a useful indicator of survival. Create a new column *has_cabin_number* which has *1* if there is a cabin number, and *0* otherwise.
 
 ```{r}
-summary(data$cabin)
-data_clean <- data %>% 
+data.clean <- data %>% 
   mutate(has_cabin_number = as.factor(ifelse(!is.na(cabin),1,0)))
-glimpse(data_clean)
+glimpse(data.clean)
+```
+
+### 5: Submit the project on Github
+Include your code, the original data as a CSV file *titanic_original.csv*, and the cleaned up data as a CSV file called *titanic_clean.csv*.
+
+```{r}
+write.csv(data.clean, file = "titanic_clean.csv",quote=F,row.names=F)
 ```
