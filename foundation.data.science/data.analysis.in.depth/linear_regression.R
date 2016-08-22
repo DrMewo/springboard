@@ -130,12 +130,27 @@ coef(summary(sat.voting.mod))
 ##   per capita (energy) from the percentage of residents living in
 ##   metropolitan areas (metro). Be sure to
 ##   1. Examine/plot the data before fitting the model
+
+plot(states.data$energy,states.data$metro)
+energy.mod <- lm(energy~metro,data = na.omit(states.data))
+
+
 ##   2. Print and interpret the model `summary'
+summary(energy.mod)
+
 ##   3. `plot' the model to look for deviations from modeling assumptions
+plot(energy.mod)
+
+#residuals are a little bit disperse
+#this is because there are certain elements that affect the linear model
 
 ##   Select one or more additional predictors to add to your model and
 ##   repeat steps 1-3. Is this model significantly better than the model
 ##   with /metro/ as the only predictor?
+
+energy.area.mod <- lm(energy~metro+area,data = na.omit(states.data))
+
+#is overall better
 
 ## Interactions and factors
 ## ══════════════════════════
@@ -201,5 +216,11 @@ coef(summary(lm(csat ~ C(region, contr.helmert),
 ##   1. Add on to the regression equation that you created in exercise 1 by
 ##      generating an interaction term and testing the interaction.
 
+energy.area.mod.2 <- lm(energy~metro*area,data = na.omit(states.data))
+anova(energy.area.mod,energy.area.mod.2)
+
 ##   2. Try adding region to the model. Are there significant differences
 ##      across the four regions?
+
+energy.area.region.mod <- lm(energy~metro*area+C(region,base=4),data = na.omit(states.data))
+ #cannot identify differences accross regions
