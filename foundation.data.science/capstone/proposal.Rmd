@@ -21,11 +21,24 @@ They have decided to focus on developing a product for sarcomas, a rare type of 
 
 The data is publically available in the following links
 
-RNASeq TCGA-SARC dataset from [GDC Data Portal](https://gdc-portal.nci.nih.gov/) data (in log2(normalized_count+1) units)
+RNASeq TCGA-SARC dataset from [GDC Data Portal](https://gdc-portal.nci.nih.gov/) data (in log2(normalized_count+1) units).
+
+This will be called TCGA dataset
 
 [Expression data from Complex genetics sarcomas (cohort 1 and 2)](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE21050)  The data was measured in Affymetrix Human Genome U133 Plus 2.0 Array
 
+This will be called CINSARC dataset
 
 ## 4: In brief, outline your approach to solving this problem (knowing that this might change later).
 
+### 1: Normalize data (since it is on two different platforms)
+
+### 2: Develop modelling approaches based on random forest, neural networks, etc
+
+### 3: Cross-validate analysis
+
+### 4: Determine ROC for models or merged models
+
 ## 5: What are your deliverables? Typically, this would include code, along with a paper and/or a slide deck.
+
+Code and presentation
