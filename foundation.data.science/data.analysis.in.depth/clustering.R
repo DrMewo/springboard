@@ -13,6 +13,7 @@ head(wine)
 # Exercise 1: Remove the first column from the data and scale
 # it using the scale() function
 
+wine.1<-wine[,-1]
 
 # Now we'd like to cluster the data using K-Means. 
 # How do we decide how many clusters to use if you don't know that already?
@@ -36,8 +37,22 @@ wssplot(df)
 
 # Exercise 2:
 #   * How many clusters does this method suggest?
+
+wssplot(wine.1)
+
+#sugests 3 or 4
+
+
 #   * Why does this method work? What's the intuition behind it?
+
+# it tells you what is the variability (using the within sum of squares) of components in the clusters you are separating yoru data into. eventually it plateaus and the clustering is probably less informative because it is clustering similar things
+
 #   * Look at the code for wssplot() and figure out how it works
+
+# calculate within sum of squares, cluster for each number of clusters, compare wss at each step, slope is indicator of variability between clusters
+
+
+
 
 # Method 2: Use the NbClust library, which runs many experiments
 # and gives a distribution of potential number of clusters.
@@ -49,9 +64,11 @@ barplot(table(nc$Best.n[1,]),
 	          xlab="Numer of Clusters", ylab="Number of Criteria",
 		            main="Number of Clusters Chosen by 26 Criteria")
 
-
 # Exercise 3: How many clusters does this method suggest?
 
+nc <- NbClust(wine.1, min.nc=2, max.nc=15, method="kmeans")
+
+#three 
 
 # Exercise 4: Once you've picked the number of clusters, run k-means 
 # using this number of clusters. Output the result of calling kmeans()
@@ -59,11 +76,21 @@ barplot(table(nc$Best.n[1,]),
 
 # fit.km <- kmeans( ... )
 
+fit.km <- kmeans(wine.1, centers=3)
+
 # Now we want to evaluate how well this clustering does.
 
 # Exercise 5: using the table() function, show how the clusters in fit.km$clusters
 # compares to the actual wine types in wine$Type. Would you consider this a good
 # clustering?
+
+table(fit.km$clusters)
+
+table(wine$Type)
+
+cor(as.numeric(fit.km$cluster),as.numeric(wine$Type))
+
+#its correlation is -.5 it seems the assignment was almost random
 
 
 # Exercise 6:
@@ -71,3 +98,7 @@ barplot(table(nc$Best.n[1,]),
 # * Would you consider this a good clustering?
 
 #clusplot( ... )
+
+clusplot(wine.1,wine$Type)
+clusplot(wine.1,fit.km$cluster)
+#seems to be effective,the pca components explain more variability than the type
