@@ -31,13 +31,13 @@ This will be called CINSARC dataset
 
 ## 4: In brief, outline your approach to solving this problem (knowing that this might change later).
 
-### 1: Normalize data (since it is on two different platforms)
+1: Normalize data (since it is on two different platforms)
 
-### 2: Develop modelling approaches based on random forest, neural networks, etc
+2: Develop modelling approaches based on random forest, neural networks, etc
 
-### 3: Cross-validate analysis
+3: Cross-validate analysis
 
-### 4: Determine ROC for models or merged models
+4: Determine ROC for models or merged models
 
 ## 5: What are your deliverables? Typically, this would include code, along with a paper and/or a slide deck.
 
