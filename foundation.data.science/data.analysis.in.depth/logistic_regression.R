@@ -100,9 +100,38 @@ plot(allEffects(hyp.out))
 
 ##   1. Use glm to conduct a logistic regression to predict ever worked
 ##      (everwrk) using age (age_p) and marital status (r_maritl).
+
+everwrk.out <- glm(everwrk~age_p+r_maritl,data=NH11, family="binomial")
+
 ##   2. Predict the probability of working for each level of marital
 ##      status.
 
+
+NH11$my_r_maritl<-as.character(NH11$r_maritl)
+marital.status<-names(table(NH11$my_r_maritl))
+which(NH11$my_r_maritl%in%names(table(NH11$my_r_maritl))[1])
+NH11$my_r_maritl[which(NH11$my_r_maritl%in%marital.status[1])]<-"Married"
+NH11$my_r_maritl[which(NH11$my_r_maritl%in%marital.status[2])]<-"Married"
+NH11$my_r_maritl[which(NH11$my_r_maritl%in%marital.status[3])]<-"Widowed"
+NH11$my_r_maritl[which(NH11$my_r_maritl%in%marital.status[4])]<-"Divorced"
+NH11$my_r_maritl[which(NH11$my_r_maritl%in%marital.status[5])]<-"Divorced"
+NH11$my_r_maritl[which(NH11$my_r_maritl%in%marital.status[6])]<-"Single"
+NH11$my_r_maritl[which(NH11$my_r_maritl%in%marital.status[7])]<-"Married"
+NH11$my_r_maritl[which(NH11$my_r_maritl%in%marital.status[8])]<-"Unknown"
+
+#married is a bad descriptor
+
+NH11$my_r_maritl<-as.factor(NH11$my_r_maritl)
+
+everwrk.out.2 <- glm(everwrk~age_p+my_r_maritl,data=NH11, family="binomial")
+
+
+pred.work <- with(NH11,expand.grid(age_p=c(18,85),my_r_maritl=c("Divorced","Married","Single","Unknown","Widowed",na.rm = TRUE)))
+
+#cbind(pred.work, predict(everwrk.out.2, type = "response",se.fit = TRUE, interval="confidence",newdata = pred.work))
+
+
+plot(allEffects(everwrk.out.2))
 ##   Note that the data is not perfectly clean and ready to be modeled. You
 ##   will need to clean up at least some of the variables before fitting
 ##   the model.
