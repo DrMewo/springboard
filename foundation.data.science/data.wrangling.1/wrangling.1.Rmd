@@ -1,0 +1,113 @@
+---
+title: "Springboard Foundations of Data Science"
+author: "Rocio Dominguez Vidana, PhD"
+date: "July 7, 2016"
+output: html_document
+---
+
+# Data Wrangling Exercise 1: Basic Data Manipulation
+
+In this exercise, you'll work with a toy data set showing product purchases from an electronics store. While the data set is small and simple, it still illustrates many of the challenges you have to address in real-world data wrangling! The data set and exercise are inspired by [this blog post](http://d3-media.blogspot.nl/2013/11/how-to-refine-your-data.html).
+
+**Getting started**
+
+The data is in an [Excel file here](https://drive.google.com/file/d/0B9vKjeWdQHa5OE5UQ1k4TWJlelU/view) called refine.xlsx. Right away, you'll notice that the data set has a few issues:
+There are four brands: Philips, Akzo, Van Houten and Unilever. However, there are many different spellings and capitalizations of those names!
+
+The product code and number are combined in one column, separated by a hyphen.
+ 
+## Exercise
+
+Using R, clean this data set to make it easier to visualize and analyze. Specifically, these are the tasks you need to do:
+
+### 0: Load the data in RStudio
+
+Save the data set as a CSV file called refine_original.csv and load it in RStudio into a data frame.
+
+```{r message=FALSE}
+library(tidyr)
+library(dplyr)
+raw<-read.csv("refine_original.csv",header=T)
+
+```
+
+### 1: Clean up brand names
+
+Clean up the 'company' column, so all of the misspellings of the brand names are standardized. For example, you can transform the values in the column to be: philips, akzo, van houten and unilever (all lowercase).
+
+```{r}
+data <- raw %>%
+    arrange(company) %>% #sort data by company column
+    mutate_each(funs(tolower),matches("company")) #change to lower letters company column
+table(data$company) #assess company names
+#fix manually
+data[1:7,1] = "akzo"
+data[8:16,1] = "philips"
+data[17:20,1] = "unilever"
+data[21:25,1] = "van houten"
+```
+
+
+### 2: Separate product code and number
+
+Separate the product code and product number into separate columns i.e. add two new columns called *product_code* and *product_number*, containing the product code and number respectively
+
+```{r}
+colnames(data)[2]<-"product_code-number"
+data<-separate(data,"product_code-number", c("product_code", "product_number"), sep = "-")
+
+```
+
+### 3: Add product categories
+
+Separate the product code and product number into separate columns i.e. add two new columns called *product_code* and *product_number*, containing the product code and number respectively
+
+* p = smartphone
+
+* v = TV
+
+* x = laptop
+
+* q = tablet
+
+In order to make the data more readable, add a column with the product category for each record.
+
+```{r}
+product <- c("Smartphone", "TV", "Laptop", "Tablet")
+product_code <- c("p", "v", "x", "q")
+product.info<-data.frame(product,product_code)
+product.info$product_code<-as.factor(product.info$product_code)
+data <- left_join(data, product.info, by="product_code")
+```
+
+### 4: Add full address for geocoding
+
+You'd like to view the customer information on a map. In order to do that, the addresses need to be in a form that can be easily geocoded. Create a new column *full_address* that concatenates the three address fields (address, city, country), separated by commas.
+
+```{r}
+data <- unite_(data, "full_address", c("address","city","country"), sep=", ", remove = FALSE)
+```
+
+### 5: Create dummy variables for company and product category
+
+Both the company name and product category are categorical variables i.e. they take only a fixed set of values. In order to use them in further analysis you need to create dummy variables. Create dummy binary variables for each of them with the prefix *company_* and *product_* i.e.
+
+1. Add four binary (1 or 0) columns for company: *company_philips*, *company_akzo*, *company_van_houten* and *company_unilever*
+
+2. Add four binary (1 or 0) columns for product category: *product_smartphone*, *product_tv*, *product_laptop* and *product_tablet*
+
+```{r}
+data.w.dummy <- data %>% 
+  mutate(company_akzo = ifelse(company == "akzo", 1, 0), company_philips = ifelse(company == "philips", 1,0), company_unilever = ifelse(company == "unilever",1,0), company_van_houten = ifelse(company == "van houten", 1,0)) %>% 
+  mutate(product_smartphone = ifelse(product == "Smartphone",1,0), product_tablet = ifelse(product == "Tablet",1,0), product_tv = ifelse(product == "TV",1,0), product_laptop = ifelse(product == "Laptop",1,0))
+
+```
+
+### 6: Submit the project on Github
+
+Include your code, the original data as a CSV file *refine_original.csv*, and the cleaned up data as a CSV file called *refine_clean.csv*.
+
+```{r}
+data.final <- data.w.dummy %>% arrange(desc(full_address))
+write.csv(data.final, file = "refine_clean.csv",quote=F,row.names=F)
+```
