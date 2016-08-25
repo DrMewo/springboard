@@ -1,0 +1,97 @@
+---
+title: "Springboard Foundations of Data Science"
+author: "Rocio Dominguez Vidana, PhD; and Matt Fornito, PhD (mentor)"
+date: "August 30, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+# Development of Gene Expression Profile signature to predict survival in Sarcoma patients (Capstone Project)
+
+Molecular diagnostics is the area at the center of a healthcare revolution and under intense development. It is possible by the increasing use  of powerful profiling tools that leverage our understanding of genetic variability within individuals in healthy and diseased states, and it can inform treatment and prognosis for patients.
+
+The client company has extensive experience developing prognostic tests with “gene expression signatures” in a subset of rare neoplastic diseases for which there are not a lot of research resources allocated to. Using a combination of publically available data curated with further validation. They have developed products which can be used to predict metastatic potential, and thus inform aggressivity of treatment. The company's objective is to achieve that these become “standard of care” by improving the patient's diagnostic; and thus, be rutinarily reimbursed by insurance companies.
+
+They have decided to focus on developing a product for sarcomas, a rare type of cancer in humans that arises from transformed cells of mesenchymal origin (bone, cartilage, fat, muscle, vascular, hematopoietic tissues, etc). Within sarcomas there is extreme genetic variability, 30% of them have distinct genetic features that can be considered the cause of those particular tumors. However, for the other 70% percent, there is really no traceable genetic modification. Currently, there are two publically available datasets:
+
+RNASeq TCGA-SARC dataset from [GDC Data Portal](https://gdc-portal.nci.nih.gov/) data (in log2(normalized_count+1) units).
+
+This will be called TCGA dataset
+
+[Expression data from Complex genetics sarcomas (cohort 1 and 2)](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE21050)  The data was measured in Affymetrix Human Genome U133 Plus 2.0 Array
+
+This will be called CINSARC dataset
+however there are many challenges in them like 
+
+
+Load the two available RNA expression datasets, and the function script.
+
+```{r}
+
+load("capstone.RData")
+
+source("capstone.code.R")
+
+dim(expression.GSE71119)
+
+dim(expression.TCGA.SARC)
+
+```
+
+There are different subsets of genes available in each dataset, in order to determine the best predictors accross both datasets, we will keep only the common genes. 
+
+```{r}
+
+common.expression.genes <- intersect(colnames(expression.TCGA.SARC),colnames(expression.GSE71119))
+
+```
+
+A transformation to a normal distribution by removing the average effect of both all the genes, and all the samples. 
+```{r}
+
+normalized.tcga <- normalize.expression.data(expression.TCGA.SARC[,common.expression.genes])
+
+normalized.cinsarc <- normalize.expression.data(expression.GSE71119[,common.expression.genes])
+
+```
+
+Then we will take the top 2/3 of the genes with the highest standard deviation, and we remove the less expressed genes (only the bottom 10% that has a gene mean expression z score lesser than  .5.
+
+```{r}
+
+selected.tcga <- select.variable.genes (normalized.tcga)
+
+selected.cinsarc <- select.variable.genes (normalized.cinsarc)
+
+common.variable.genes<-intersect(selected.tcga$genes,selected.cinsarc$genes)
+
+```
+
+Then we remove all the genes with correlation higher than .5
+
+```{r}
+
+valid.genes.tcga <- remove.correlated.genes.1(list(genes.rank = selected.tcga$genes.rank, expression.data = normalized.tcga[,common.variable.genes]))
+
+valid.genes.cinsarc <- remove.correlated.genes.1(list(genes.rank = selected.cinsarc$genes.rank, expression.data = normalized.cinsarc[,common.variable.genes]))
+
+common.valid.genes<-intersect(valid.genes.tcga,valid.genes.cinsarc)
+
+for.modeling.expression.cinsarc <- normalized.cinsarc[,common.valid.genes]
+
+for.modeling.expression.tcga <- normalized.tcga[,common.valid.genes]
+
+```
+
+```{r, include=FALSE}
+
+rm(common.expression.genes,common.valid.genes,common.variable.genes,selected.cinsarc,selected.tcga,valid.genes.tcga,valid.genes.cinsarc)
+
+gc()
+
+```
