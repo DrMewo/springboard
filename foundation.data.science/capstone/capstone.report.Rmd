@@ -31,7 +31,7 @@ however there are many challenges in them like
 
 Load the two available RNA expression datasets, and the function script.
 
-```{r}
+```{r load dataset}
 
 load("capstone.RData")
 
@@ -45,14 +45,14 @@ dim(expression.TCGA.SARC)
 
 There are different subsets of genes available in each dataset, in order to determine the best predictors accross both datasets, we will keep only the common genes. 
 
-```{r}
+```{r identify common genes}
 
 common.expression.genes <- intersect(colnames(expression.TCGA.SARC),colnames(expression.GSE71119))
 
 ```
 
 A transformation to a normal distribution by removing the average effect of both all the genes, and all the samples. 
-```{r}
+```{r normalize datasets}
 
 normalized.tcga <- normalize.expression.data(expression.TCGA.SARC[,common.expression.genes])
 
@@ -62,7 +62,7 @@ normalized.cinsarc <- normalize.expression.data(expression.GSE71119[,common.expr
 
 Then we will take the top 2/3 of the genes with the highest standard deviation, and we remove the less expressed genes (only the bottom 10% that has a gene mean expression z score lesser than  .5.
 
-```{r}
+```{r select common normalized genes}
 
 selected.tcga <- select.variable.genes (normalized.tcga)
 
@@ -74,7 +74,7 @@ common.variable.genes<-intersect(selected.tcga$genes,selected.cinsarc$genes)
 
 Then we remove all the genes with correlation higher than .5
 
-```{r}
+```{r choose workable genes, reduce dimensionality}
 
 valid.genes.tcga <- remove.correlated.genes.1(list(genes.rank = selected.tcga$genes.rank, expression.data = normalized.tcga[,common.variable.genes]))
 
@@ -88,10 +88,94 @@ for.modeling.expression.tcga <- normalized.tcga[,common.valid.genes]
 
 ```
 
-```{r, include=FALSE}
+```{r delete bunch of intermediate variables, include=FALSE}
 
 rm(common.expression.genes,common.valid.genes,common.variable.genes,selected.cinsarc,selected.tcga,valid.genes.tcga,valid.genes.cinsarc)
 
 gc()
 
+```
+
+Now we are focusing on the clinical data this 
+
+```{r data janitoring part 1}
+
+clinical.cinsarc <- clinical.GSE71119[,c(8:10)]
+colnames(clinical.cinsarc) <- c("subtype","event","time")
+clinical.cinsarc$subtype <- as.character(clinical.cinsarc$subtype)
+clinical.cinsarc$event <- as.character(clinical.cinsarc$event)
+clinical.cinsarc$time <- as.numeric(as.character(clinical.cinsarc$time))*30
+
+clinical.tcga <- clinical.TCGA.SARC[,c(2,9,32)]
+colnames(clinical.tcga) <- c("event","time","subtype")
+clinical.tcga$time <- as.numeric(clinical.tcga$time)
+clinical.tcga$subtype <- as.character(clinical.tcga$subtype)
+
+```
+
+```{r data janitoring part 2, include=FALSE}
+clinical.cinsarc$subtype[which(clinical.cinsarc$subtype=="Dedifferentiated liposarcoma")]<-rep("1",length(which(clinical.cinsarc$subtype=="Dedifferentiated liposarcoma")))
+clinical.cinsarc$subtype[which(clinical.cinsarc$subtype=="Leiomyosarcoma")]<-rep("2",length(which(clinical.cinsarc$subtype=="Leiomyosarcoma")))
+clinical.cinsarc$subtype[which(clinical.cinsarc$subtype=="GIST")]<-rep("2",length(which(clinical.cinsarc$subtype=="GIST")))
+clinical.cinsarc$subtype[which(clinical.cinsarc$subtype=="Myxofibrosarcoma")]<-rep("3",length(which(clinical.cinsarc$subtype=="Myxofibrosarcoma")))
+clinical.cinsarc$subtype[which(clinical.cinsarc$subtype=="Undifferentiated sarcoma")]<-rep("4",length(which(clinical.cinsarc$subtype=="Undifferentiated sarcoma")))
+clinical.cinsarc$subtype[which(clinical.cinsarc$subtype=="Other")]<-rep("6",length(which(clinical.cinsarc$subtype=="Other")))
+clinical.cinsarc$subtype <- as.integer(clinical.cinsarc$subtype)
+clinical.cinsarc$event[which(clinical.cinsarc$event=="Yes")]<-rep("1",length(which(clinical.cinsarc$event=="Yes")))
+clinical.cinsarc$event[which(clinical.cinsarc$event=="No")]<-rep("0",length(which(clinical.cinsarc$event=="No")))
+clinical.cinsarc$event <- as.integer(clinical.cinsarc$event)
+
+clinical.tcga$subtype[which(clinical.tcga$subtype=="Dedifferentiated liposarcoma")]<-rep("1",length(which(clinical.tcga$subtype=="Dedifferentiated liposarcoma")))
+clinical.tcga$subtype[which(clinical.tcga$subtype=="Leiomyosarcoma (LMS)")]<-rep("2",length(which(clinical.tcga$subtype=="Leiomyosarcoma (LMS)")))
+clinical.tcga$subtype[which(clinical.tcga$subtype=="Myxofibrosarcoma")]<-rep("3",length(which(clinical.tcga$subtype=="Myxofibrosarcoma")))
+clinical.tcga$subtype[which(clinical.tcga$subtype=="Pleomorphic MFH/ Undifferentiated pleomorphic sarcoma")]<-rep("4",length(which(clinical.tcga$subtype=="Pleomorphic MFH/ Undifferentiated pleomorphic sarcoma")))
+clinical.tcga$subtype[which(clinical.tcga$subtype=="Giant cell MFH / Undifferentiated pleomorphic sarcoma with giant cells")]<-rep("4",length(which(clinical.tcga$subtype=="Giant cell MFH / Undifferentiated pleomorphic sarcoma with giant cells")))
+clinical.tcga$subtype[which(clinical.tcga$subtype=="Undifferentiated Pleomorphic Sarcoma (UPS)")]<-rep("4",length(which(clinical.tcga$subtype=="Undifferentiated Pleomorphic Sarcoma (UPS)")))
+clinical.tcga$subtype[which(clinical.tcga$subtype=="Sarcoma; synovial; poorly differentiated")]<-rep("5",length(which(clinical.tcga$subtype=="Sarcoma; synovial; poorly differentiated")))
+clinical.tcga$subtype[which(clinical.tcga$subtype=="Synovial Sarcoma - Biphasic")]<-rep("5",length(which(clinical.tcga$subtype=="Synovial Sarcoma - Biphasic")))
+clinical.tcga$subtype[which(clinical.tcga$subtype=="Synovial Sarcoma - Monophasic")]<-rep("5",length(which(clinical.tcga$subtype=="Synovial Sarcoma - Monophasic")))
+clinical.tcga$subtype[which(clinical.tcga$subtype=="Desmoid Tumor")]<-rep("6",length(which(clinical.tcga$subtype=="Desmoid Tumor")))
+clinical.tcga$subtype[which(clinical.tcga$subtype=="Malignant Peripheral Nerve Sheath Tumors (MPNST)")]<-rep("6",length(which(clinical.tcga$subtype=="Malignant Peripheral Nerve Sheath Tumors (MPNST)")))
+
+clinical.tcga$subtype <- as.integer(clinical.tcga$subtype)
+
+rm(clinical.GSE71119,clinical.TCGA.SARC,expression.TCGA.SARC,expression.GSE71119)
+save.image("C:/Users/rvidana/Dropbox/capstone/capstone.work.RData")
+gc()
+
+```
+
+
+
+```{r create training and testing sets}
+cinsarc <- generate.testing.training.sets(list(clinical=clinical.cinsarc,expression=for.modeling.expression.cinsarc))
+tcga <- generate.testing.training.sets(list(clinical=clinical.tcga,expression=for.modeling.expression.tcga))
+rm(for.modeling.expression.tcga,for.modeling.expression.cinsarc,clinical.tcga,clinical.cinsarc)
+
+```
+
+
+
+```{r running random forest}
+
+#lm.tcga <- lm(event ~ . - time, data = cbind(tcga$training[["clinical"]],tcga$training[["expression"]]))
+
+glm.tcga <- glm(event ~ . - time ,data=cbind(tcga$training[["clinical"]],tcga$training[["expression"]]),family=binomial())
+
+glm.cinsarc <- glm(event ~ . - time ,data=cbind(cinsarc$training[["clinical"]],cinsarc$training[["expression"]]),family=binomial())
+
+rF.tcga <- randomForest(event ~ . - time, data = cbind(tcga$training[["clinical"]],tcga$training[["expression"]]))
+
+rF.cinsarc <- randomForest(event ~ . - time, data = cbind(cinsarc$training[["clinical"]],cinsarc$training[["expression"]]))
+
+varImpPlot(rF.tcga)
+
+```
+
+run svms
+
+```{r run svms}
+svm.tcga <- svm(event ~ . - time, data = cbind(tcga$training[["clinical"]],tcga$training[["expression"]]))
+
+svm.cinsarc <- svm(event ~ . - time, data = cbind(cinsarc$training[["clinical"]],cinsarc$training[["expression"]]))
 ```
