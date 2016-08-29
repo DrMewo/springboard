@@ -55,3 +55,14 @@ remove.correlated.genes.2 <- function (data.2)
 	genes<-data.2$all.genes[which(!(data.2$all.genes%in%unique(cor.table$remove)))]
 	return(genes)
 }
+
+generate.testing.training.sets <- function(data, training.percent = .8)
+{
+    all.event.1 <- rownames(data$clinical)[which(data$clinical[,"event"]==1)]
+    all.event.0 <- rownames(data$clinical)[which(data$clinical[,"event"]==0)]
+    split.event.1 <- sample(2,length(all.event.1),replace=T,prob=c(training.percent,1-training.percent))
+    split.event.0 <- sample(2,length(all.event.0),replace=T,prob=c(training.percent,1-training.percent))
+    training.rows <- c(all.event.0[which(split.event.0==1)],all.event.1[which(split.event.1==1)])
+    testing.rows <- c(all.event.0[which(split.event.0==2)],all.event.1[which(split.event.1==2)])
+    return(list(training=list(clinical=data$clinical[training.rows,],expression=data$expression[training.rows,]),testing=list(clinical=data$clinical[testing.rows,],expresssion=data$expression[testing.rows,])))
+}
