@@ -140,7 +140,7 @@ clinical.tcga$subtype[which(clinical.tcga$subtype=="Malignant Peripheral Nerve S
 clinical.tcga$subtype <- as.integer(clinical.tcga$subtype)
 
 rm(clinical.GSE71119,clinical.TCGA.SARC,expression.TCGA.SARC,expression.GSE71119)
-save.image("C:/Users/rvidana/Dropbox/capstone/capstone.work.RData")
+save.image("capstone.work.RData")
 gc()
 
 ```
