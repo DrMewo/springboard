@@ -1,7 +1,16 @@
 library(knitr)
 library(reshape)
+library(ggplot2)
+library(gridExtra)
+library(randomForest)
+library(e1071)
 
 
+ggplot.histogram <- function(data, title = "RNASeq Expression" )
+{
+	ggplot.hist <- ggplot(melt(as.matrix(data)),aes(x=value)) + geom_histogram(bins = 500) + ggtitle(title)
+	return(ggplot.hist)
+}
 
 normalize.expression.data <- function(data)
 {
@@ -64,5 +73,26 @@ generate.testing.training.sets <- function(data, training.percent = .8)
     split.event.0 <- sample(2,length(all.event.0),replace=T,prob=c(training.percent,1-training.percent))
     training.rows <- c(all.event.0[which(split.event.0==1)],all.event.1[which(split.event.1==1)])
     testing.rows <- c(all.event.0[which(split.event.0==2)],all.event.1[which(split.event.1==2)])
-    return(list(training=list(clinical=data$clinical[training.rows,],expression=data$expression[training.rows,]),testing=list(clinical=data$clinical[testing.rows,],expresssion=data$expression[testing.rows,])))
+    return(list(training=list(clinical=data$clinical[training.rows,],expression=data$expression[training.rows,]),testing=list(clinical=data$clinical[testing.rows,],expression=data$expression[testing.rows,])))
+}
+
+run.classifier <- function (data, classifier = c("random forest", "svm"))
+{
+	if (classifier == "random forest")
+	{
+		model <- randomForest(event ~ . - time, data = data, importance = TRUE)
+	}
+	if (classifier == "svm")
+	{
+		model <- svm(event ~ . - time, data = data)
+
+		model <- svm(event ~ . - time, data = cbind(cinsarc$training[["clinical"]],cinsarc$training[["expression"]]))
+	}
+	return (model)
+}
+
+
+ensembl.svm.rF <- function (predict.rF, predict.svm)
+{
+	predict.ensembl <- (as.numeric(as.character(predict.rF))+as.numeric(as.character(predict.svm)))/2 
 }
