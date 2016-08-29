@@ -2,12 +2,13 @@
 title: "Springboard Foundations of Data Science"
 author: "Rocio Dominguez Vidana, PhD; and Matt Fornito, PhD (mentor)"
 date: "August 30, 2016"
-output: html_document
+output: pdf_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup and load data, include=FALSE}
 
 knitr::opts_chunk$set(echo = TRUE)
+
 
 ```
 
@@ -17,21 +18,17 @@ Molecular diagnostics is the area at the center of a healthcare revolution and u
 
 The client company has extensive experience developing prognostic tests with “gene expression signatures” in a subset of rare neoplastic diseases for which there are not a lot of research resources allocated to. Using a combination of publically available data curated with further validation. They have developed products which can be used to predict metastatic potential, and thus inform aggressivity of treatment. The company's objective is to achieve that these become “standard of care” by improving the patient's diagnostic; and thus, be rutinarily reimbursed by insurance companies.
 
-They have decided to focus on developing a product for sarcomas, a rare type of cancer in humans that arises from transformed cells of mesenchymal origin (bone, cartilage, fat, muscle, vascular, hematopoietic tissues, etc). Within sarcomas there is extreme genetic variability, 30% of them have distinct genetic features that can be considered the cause of those particular tumors. However, for the other 70% percent, there is really no traceable genetic modification. Currently, there are two publically available datasets:
+The client company has decided to focus on developing a product for sarcomas, a rare type of cancer in humans that arises from transformed cells of mesenchymal origin (bone, cartilage, fat, muscle, vascular, hematopoietic tissues, etc). Within sarcomas there is extreme genetic variability, 30% of them have distinct genetic features that can be considered the cause of those particular tumors. However, for the other 70% percent, there is really no traceable genetic modification, thus suggesting that the driving factor is certain alteration in [genetic expression](https://en.wikipedia.org/wiki/Gene_expression); a hypothesis for which we would need to identify the responsible mRNAs.
 
-RNASeq TCGA-SARC dataset from [GDC Data Portal](https://gdc-portal.nci.nih.gov/) data (in log2(normalized_count+1) units).
+Currently, there are two publically available datasets:
 
-This will be called TCGA dataset
+* RNASeq TCGA-SARC dataset from the [Cancer Genome Browser](https://genome-cancer.ucsc.edu/proj/site/hgHeatmap/). The dataset TCGA_SARC_exp_HiSeqV2-2015-02-24.tgz is in log2(normalized_count+1) units, and is henceforth referred as the "tcga dataset".
 
-[Expression data from Complex genetics sarcomas (cohort 1 and 2)](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE21050)  The data was measured in Affymetrix Human Genome U133 Plus 2.0 Array
-
-This will be called CINSARC dataset
-however there are many challenges in them like 
-
+* [RNA-seq performed on sarcomas to identify various alterations](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE71119)  This dataset belongs to the following [paper](http://www.ncbi.nlm.nih.gov/pubmed/26916546), and is hereafter referred to as the "cinsarc dataset".
 
 Load the two available RNA expression datasets, and the function script.
 
-```{r load dataset}
+```{r initial data exploration}
 
 load("capstone.RData")
 
@@ -40,6 +37,12 @@ source("capstone.code.R")
 dim(expression.GSE71119)
 
 dim(expression.TCGA.SARC)
+
+plot.cinsarc <- ggplot.histogram(expression.GSE71119, title = "RNASeq Expression CINSARC data")
+
+plot.tcga <- ggplot.histogram(expression.TCGA.SARC, title = "RNASeq Expression TCGA data")
+
+grid.arrange(plot.cinsarc, plot.tcga, ncol=2)
 
 ```
 
@@ -51,12 +54,19 @@ common.expression.genes <- intersect(colnames(expression.TCGA.SARC),colnames(exp
 
 ```
 
-A transformation to a normal distribution by removing the average effect of both all the genes, and all the samples. 
+A transformation to a normal distribution by removing the average effect of both all the genes, and all the samples.
+
 ```{r normalize datasets}
 
 normalized.tcga <- normalize.expression.data(expression.TCGA.SARC[,common.expression.genes])
 
 normalized.cinsarc <- normalize.expression.data(expression.GSE71119[,common.expression.genes])
+
+plot.cinsarc <- ggplot.histogram(normalized.tcga, title = "Normalized RNASeq CINSARC")
+
+plot.tcga <- ggplot.histogram(normalized.cinsarc, title = "Normalized RNASeq TCGA")
+
+grid.arrange(plot.cinsarc, plot.tcga, ncol=2)
 
 ```
 
@@ -86,19 +96,26 @@ for.modeling.expression.cinsarc <- normalized.cinsarc[,common.valid.genes]
 
 for.modeling.expression.tcga <- normalized.tcga[,common.valid.genes]
 
+plot.cinsarc <- ggplot.histogram(for.modeling.expression.cinsarc, title = "Selected RNASeq CINSARC")
+
+plot.tcga <- ggplot.histogram(for.modeling.expression.cinsarc, title = "Selected RNASeq TCGA")
+
+grid.arrange(plot.cinsarc, plot.tcga, ncol=2)
+
+
 ```
 
-```{r delete bunch of intermediate variables, include=FALSE}
+```{r delete temporary variables 1, include=FALSE}
 
-rm(common.expression.genes,common.valid.genes,common.variable.genes,selected.cinsarc,selected.tcga,valid.genes.tcga,valid.genes.cinsarc)
+rm(common.expression.genes,common.valid.genes,common.variable.genes,selected.cinsarc,selected.tcga,valid.genes.tcga,valid.genes.cinsarc,plot.cinsarc,plot.tcga)
 
 gc()
 
 ```
 
-Now we are focusing on the clinical data this 
+Once we have generated equivalent and comparable matrices for both RNASeq expression datasets, we are shifting our focus to the clinical data. Unfortunately there is not a lot of common information between both patient cohorts, so our focus will be on typing in the same way the output of each individual patient, and homologate as much as possible the pathological information available. This part has been mostly pedestrian and it is not possible to automate it extensively as the management of the expression data.
 
-```{r data janitoring part 1}
+```{r data janitoring}
 
 clinical.cinsarc <- clinical.GSE71119[,c(8:10)]
 colnames(clinical.cinsarc) <- c("subtype","event","time")
@@ -108,12 +125,10 @@ clinical.cinsarc$time <- as.numeric(as.character(clinical.cinsarc$time))*30
 
 clinical.tcga <- clinical.TCGA.SARC[,c(2,9,32)]
 colnames(clinical.tcga) <- c("event","time","subtype")
+clinical.tcga$event <- as.factor(clinical.tcga$event)
 clinical.tcga$time <- as.numeric(clinical.tcga$time)
 clinical.tcga$subtype <- as.character(clinical.tcga$subtype)
 
-```
-
-```{r data janitoring part 2, include=FALSE}
 clinical.cinsarc$subtype[which(clinical.cinsarc$subtype=="Dedifferentiated liposarcoma")]<-rep("1",length(which(clinical.cinsarc$subtype=="Dedifferentiated liposarcoma")))
 clinical.cinsarc$subtype[which(clinical.cinsarc$subtype=="Leiomyosarcoma")]<-rep("2",length(which(clinical.cinsarc$subtype=="Leiomyosarcoma")))
 clinical.cinsarc$subtype[which(clinical.cinsarc$subtype=="GIST")]<-rep("2",length(which(clinical.cinsarc$subtype=="GIST")))
@@ -121,9 +136,10 @@ clinical.cinsarc$subtype[which(clinical.cinsarc$subtype=="Myxofibrosarcoma")]<-r
 clinical.cinsarc$subtype[which(clinical.cinsarc$subtype=="Undifferentiated sarcoma")]<-rep("4",length(which(clinical.cinsarc$subtype=="Undifferentiated sarcoma")))
 clinical.cinsarc$subtype[which(clinical.cinsarc$subtype=="Other")]<-rep("6",length(which(clinical.cinsarc$subtype=="Other")))
 clinical.cinsarc$subtype <- as.integer(clinical.cinsarc$subtype)
+
 clinical.cinsarc$event[which(clinical.cinsarc$event=="Yes")]<-rep("1",length(which(clinical.cinsarc$event=="Yes")))
 clinical.cinsarc$event[which(clinical.cinsarc$event=="No")]<-rep("0",length(which(clinical.cinsarc$event=="No")))
-clinical.cinsarc$event <- as.integer(clinical.cinsarc$event)
+clinical.cinsarc$event <- as.factor(clinical.cinsarc$event)
 
 clinical.tcga$subtype[which(clinical.tcga$subtype=="Dedifferentiated liposarcoma")]<-rep("1",length(which(clinical.tcga$subtype=="Dedifferentiated liposarcoma")))
 clinical.tcga$subtype[which(clinical.tcga$subtype=="Leiomyosarcoma (LMS)")]<-rep("2",length(which(clinical.tcga$subtype=="Leiomyosarcoma (LMS)")))
@@ -136,60 +152,86 @@ clinical.tcga$subtype[which(clinical.tcga$subtype=="Synovial Sarcoma - Biphasic"
 clinical.tcga$subtype[which(clinical.tcga$subtype=="Synovial Sarcoma - Monophasic")]<-rep("5",length(which(clinical.tcga$subtype=="Synovial Sarcoma - Monophasic")))
 clinical.tcga$subtype[which(clinical.tcga$subtype=="Desmoid Tumor")]<-rep("6",length(which(clinical.tcga$subtype=="Desmoid Tumor")))
 clinical.tcga$subtype[which(clinical.tcga$subtype=="Malignant Peripheral Nerve Sheath Tumors (MPNST)")]<-rep("6",length(which(clinical.tcga$subtype=="Malignant Peripheral Nerve Sheath Tumors (MPNST)")))
-
 clinical.tcga$subtype <- as.integer(clinical.tcga$subtype)
 
+```
+
+
+```{r delete temporary variables 2, include=FALSE}
+
 rm(clinical.GSE71119,clinical.TCGA.SARC,expression.TCGA.SARC,expression.GSE71119)
-save.image("C:/Users/rvidana/Dropbox/capstone/capstone.work.RData")
+
 gc()
 
 ```
 
-
+Now that we have the adequate coding of the clinical data, we proceed to make testing and training sets from both cohorts, taking into consideration the disparity of events in both datasets. 
 
 ```{r create training and testing sets}
+
+table(clinical.cinsarc$event)
+
+table(clinical.tcga$event)
+
 cinsarc <- generate.testing.training.sets(list(clinical=clinical.cinsarc,expression=for.modeling.expression.cinsarc))
+
 tcga <- generate.testing.training.sets(list(clinical=clinical.tcga,expression=for.modeling.expression.tcga))
-rm(for.modeling.expression.tcga,for.modeling.expression.cinsarc,clinical.tcga,clinical.cinsarc)
 
 ```
 
+```{r delete temporary variables 3, include=FALSE}
 
+rm(for.modeling.expression.tcga,for.modeling.expression.cinsarc,clinical.tcga,clinical.cinsarc)
+
+gc()
+
+```
+
+Now, finally we are ready to do run some analytics on the datasets. We will run individual random forests in the two datasets.
 
 ```{r running random forest}
 
-#glm.tcga <- glm(event ~ . - time ,data=cbind(tcga$training[["clinical"]],tcga$training[["expression"]]),family=binomial())
 
-#glm.cinsarc <- glm(event ~ . - time ,data=cbind(cinsarc$training[["clinical"]],cinsarc$training[["expression"]]),family=binomial())
+rF.tcga <- run.classifier (cbind(tcga$training[["clinical"]], tcga$training[["expression"]]), classifier = "random forest")
 
-rF.tcga <- randomForest(event ~ . - time, data = cbind(tcga$training[["clinical"]],tcga$training[["expression"]]))
-
-predict.rF.tcga <-  predict(rF.tcga, cbind(tcga$testing[["clinical"]],tcga$testing[["expression"]]))
-
-rpart.tcga <- rpart(event ~ . - time, data = cbind(tcga$training[["clinical"]],tcga$training[["expression"]]),method="class")
-
-predict.rpart.tcga <-  predict(rpart.tcga, cbind(tcga$testing[["clinical"]],tcga$testing[["expression"]]))
-
-rF.cinsarc <- randomForest(event ~ . - time, data = cbind(cinsarc$training[["clinical"]],cinsarc$training[["expression"]]))
-
-predict.rF.cinsarc <-  predict(rF.cinsarc, cbind(cinsarc$testing[["clinical"]],cinsarc$testing[["expression"]]))
-
-rpart.cinsarc <- rpart(event ~ . - time, data = cbind(cinsarc$training[["clinical"]],cinsarc$training[["expression"]]),method="class")
-
-predict.rpart.cinsarc <-  predict(rpart.cinsarc, cbind(cinsarc$testing[["clinical"]],cinsarc$testing[["expression"]]))
+predict.rF.tcga <-  predict(rF.tcga, cbind(tcga$testing[["clinical"]], tcga$testing[["expression"]]))
 
 varImpPlot(rF.tcga)
+
+rF.cinsarc <- run.classifier (cbind(cinsarc$training[["clinical"]], cinsarc$training[["expression"]]), classifier = "random forest")
+
+predict.rF.cinsarc <-  predict(rF.cinsarc, cbind(cinsarc$testing[["clinical"]], cinsarc$testing[["expression"]]))
+
+varImpPlot(rF.cinsarc)
+
+
 
 ```
 
 run svms
 
 ```{r run svms}
-svm.tcga <- svm(event ~ . - time, data = cbind(tcga$training[["clinical"]],tcga$training[["expression"]]))
 
-predict.svm.tcga <-  predict(svm.tcga, cbind(tcga$testing[["clinical"]],tcga$testing[["expression"]]))
+svm.tcga <- run.classifier (cbind(tcga$training[["clinical"]],tcga$training[["expression"]]), classifier = "svm")
 
-svm.cinsarc <- svm(event ~ . - time, data = cbind(cinsarc$training[["clinical"]],cinsarc$training[["expression"]]))
+predict.svm.tcga <-  predict(svm.tcga, cbind(tcga$testing[["clinical"]], tcga$testing[["expression"]]))
 
-predict.svm.cinsarc <-  predict(svm.cinsarc, cbind(cinsarc$testing[["clinical"]],cinsarc$testing[["expression"]]))
+svm.cinsarc <- run.classifier (cbind(cinsarc$training[["clinical"]], cinsarc$training[["expression"]]), classifier = "svm")
+
+predict.svm.cinsarc <-  predict(svm.cinsarc, cbind(cinsarc$testing[["clinical"]], cinsarc$testing[["expression"]]))
+
 ```
+
+```{r }
+
+predict.cinsarc <- ensembl.svm.rF(predict.rF.cinsarc ,predict.svm.cinsarc) 
+
+predict.tcga <- ensembl.svm.rF(predict.rF.tcga, predict.svm.tcga) 
+
+
+```
+
+END
+
+
+
