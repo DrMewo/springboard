@@ -140,7 +140,7 @@ clinical.tcga$subtype[which(clinical.tcga$subtype=="Malignant Peripheral Nerve S
 clinical.tcga$subtype <- as.integer(clinical.tcga$subtype)
 
 rm(clinical.GSE71119,clinical.TCGA.SARC,expression.TCGA.SARC,expression.GSE71119)
-save.image("capstone.work.RData")
+save.image("C:/Users/rvidana/Dropbox/capstone/capstone.work.RData")
 gc()
 
 ```
@@ -158,15 +158,25 @@ rm(for.modeling.expression.tcga,for.modeling.expression.cinsarc,clinical.tcga,cl
 
 ```{r running random forest}
 
-#lm.tcga <- lm(event ~ . - time, data = cbind(tcga$training[["clinical"]],tcga$training[["expression"]]))
+#glm.tcga <- glm(event ~ . - time ,data=cbind(tcga$training[["clinical"]],tcga$training[["expression"]]),family=binomial())
 
-glm.tcga <- glm(event ~ . - time ,data=cbind(tcga$training[["clinical"]],tcga$training[["expression"]]),family=binomial())
-
-glm.cinsarc <- glm(event ~ . - time ,data=cbind(cinsarc$training[["clinical"]],cinsarc$training[["expression"]]),family=binomial())
+#glm.cinsarc <- glm(event ~ . - time ,data=cbind(cinsarc$training[["clinical"]],cinsarc$training[["expression"]]),family=binomial())
 
 rF.tcga <- randomForest(event ~ . - time, data = cbind(tcga$training[["clinical"]],tcga$training[["expression"]]))
 
+predict.rF.tcga <-  predict(rF.tcga, cbind(tcga$testing[["clinical"]],tcga$testing[["expression"]]))
+
+rpart.tcga <- rpart(event ~ . - time, data = cbind(tcga$training[["clinical"]],tcga$training[["expression"]]),method="class")
+
+predict.rpart.tcga <-  predict(rpart.tcga, cbind(tcga$testing[["clinical"]],tcga$testing[["expression"]]))
+
 rF.cinsarc <- randomForest(event ~ . - time, data = cbind(cinsarc$training[["clinical"]],cinsarc$training[["expression"]]))
+
+predict.rF.cinsarc <-  predict(rF.cinsarc, cbind(cinsarc$testing[["clinical"]],cinsarc$testing[["expression"]]))
+
+rpart.cinsarc <- rpart(event ~ . - time, data = cbind(cinsarc$training[["clinical"]],cinsarc$training[["expression"]]),method="class")
+
+predict.rpart.cinsarc <-  predict(rpart.cinsarc, cbind(cinsarc$testing[["clinical"]],cinsarc$testing[["expression"]]))
 
 varImpPlot(rF.tcga)
 
@@ -177,5 +187,9 @@ run svms
 ```{r run svms}
 svm.tcga <- svm(event ~ . - time, data = cbind(tcga$training[["clinical"]],tcga$training[["expression"]]))
 
+predict.svm.tcga <-  predict(svm.tcga, cbind(tcga$testing[["clinical"]],tcga$testing[["expression"]]))
+
 svm.cinsarc <- svm(event ~ . - time, data = cbind(cinsarc$training[["clinical"]],cinsarc$training[["expression"]]))
+
+predict.svm.cinsarc <-  predict(svm.cinsarc, cbind(cinsarc$testing[["clinical"]],cinsarc$testing[["expression"]]))
 ```
