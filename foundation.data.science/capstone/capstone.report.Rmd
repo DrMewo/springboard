@@ -2,7 +2,7 @@
 title: "Springboard Foundations of Data Science"
 author: "Rocio Dominguez Vidana, PhD; and Matt Fornito, PhD (mentor)"
 date: "August 30, 2016"
-output: pdf_document
+output: html_document
 ---
 
 ```{r setup and load data, include=FALSE}
@@ -177,61 +177,61 @@ cinsarc <- generate.testing.training.sets(list(clinical=clinical.cinsarc,express
 
 tcga <- generate.testing.training.sets(list(clinical=clinical.tcga,expression=for.modeling.expression.tcga))
 
+tcga.training <- cbind(tcga$training[["clinical"]], tcga$training[["expression"]])
+
+tcga.testing <- cbind(tcga$testing[["clinical"]], tcga$testing[["expression"]])
+
+cinsarc.training <- cbind(cinsarc$training[["clinical"]], cinsarc$training[["expression"]])
+
+cinsarc.testing <- cbind(cinsarc$testing[["clinical"]], cinsarc$testing[["expression"]])
+
 ```
 
 ```{r delete temporary variables 3, include=FALSE}
 
-rm(for.modeling.expression.tcga,for.modeling.expression.cinsarc,clinical.tcga,clinical.cinsarc)
+rm(for.modeling.expression.tcga,for.modeling.expression.cinsarc,clinical.tcga,clinical.cinsarc, cinsarc, tcga)
 
 gc()
 
 ```
 
-Now, finally we are ready to do run some analytics on the datasets. We will run individual random forests in the two datasets.
+Now, finally we are ready to do run some analytics on the datasets. We will run individual random forests in the two training datasets and then boost them together to hopefully have greater overall accuracy.
 
-```{r running random forest}
+```{r running random forest and making the ensemble}
 
-
-rF.tcga <- run.classifier (cbind(tcga$training[["clinical"]], tcga$training[["expression"]]), classifier = "random forest")
-
-predict.rF.tcga <-  predict(rF.tcga, cbind(tcga$testing[["clinical"]], tcga$testing[["expression"]]))
+rF.tcga <- run.classifier (tcga.training, classifier = "random forest")
 
 varImpPlot(rF.tcga)
 
-rF.cinsarc <- run.classifier (cbind(cinsarc$training[["clinical"]], cinsarc$training[["expression"]]), classifier = "random forest")
+evaluate.classifier (tcga.testing, rF.tcga)
 
-predict.rF.cinsarc <-  predict(rF.cinsarc, cbind(cinsarc$testing[["clinical"]], cinsarc$testing[["expression"]]))
+rF.cinsarc <- run.classifier (cinsarc.training, classifier = "random forest")
 
 varImpPlot(rF.cinsarc)
 
+evaluate.classifier (cinsarc.testing ,rF.cinsarc)
 
+bagging.rFs(cinsarc.training, tcga.training)
+```
+
+We have demonstrated the use of Random Forests for modeling the genetic determinants for sarcoma disease development. Up to this point, and as demonstrated by the ROC curves, this model is still not good enough to determine which are the genes that would be the best candidates for the development of a GEP product. We have still other alternatives, such as the use of SVM and other type of classifiers, as well as integrating other patient cohorts as they become available.
+
+```{r run svms, eval=FALSE, include=FALSE}
+
+#svm.tcga <- run.classifier (cbind(tcga$training[["clinical"]],tcga$training[["expression"]]), classifier = "svm")
+
+#predict.svm.tcga <-  predict(svm.tcga, cbind(tcga$testing[["clinical"]], tcga$testing[["expression"]]))
+
+#svm.cinsarc <- run.classifier (cbind(cinsarc$training[["clinical"]], cinsarc$training[["expression"]]), classifier = "svm")
+
+#predict.svm.cinsarc <-  predict(svm.cinsarc, cbind(cinsarc$testing[["clinical"]], cinsarc$testing[["expression"]]))
 
 ```
 
-run svms
+```{r ensemble svms and random forests, eval=FALSE, include=FALSE}
 
-```{r run svms}
+#predict.cinsarc <- ensembl.svm.rF(predict.rF.cinsarc ,predict.svm.cinsarc) 
 
-svm.tcga <- run.classifier (cbind(tcga$training[["clinical"]],tcga$training[["expression"]]), classifier = "svm")
-
-predict.svm.tcga <-  predict(svm.tcga, cbind(tcga$testing[["clinical"]], tcga$testing[["expression"]]))
-
-svm.cinsarc <- run.classifier (cbind(cinsarc$training[["clinical"]], cinsarc$training[["expression"]]), classifier = "svm")
-
-predict.svm.cinsarc <-  predict(svm.cinsarc, cbind(cinsarc$testing[["clinical"]], cinsarc$testing[["expression"]]))
+#predict.tcga <- ensembl.svm.rF(predict.rF.tcga, predict.svm.tcga) 
 
 ```
-
-```{r }
-
-predict.cinsarc <- ensembl.svm.rF(predict.rF.cinsarc ,predict.svm.cinsarc) 
-
-predict.tcga <- ensembl.svm.rF(predict.rF.tcga, predict.svm.tcga) 
-
-
-```
-
-END
-
-
-
