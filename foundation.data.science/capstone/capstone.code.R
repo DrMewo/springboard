@@ -3,6 +3,7 @@ library(reshape)
 library(ggplot2)
 library(gridExtra)
 library(randomForest)
+library(ROCR)
 library(e1071)
 
 
@@ -78,21 +79,44 @@ generate.testing.training.sets <- function(data, training.percent = .8)
 
 run.classifier <- function (data, classifier = c("random forest", "svm"))
 {
+	data$time <- NULL
 	if (classifier == "random forest")
 	{
-		model <- randomForest(event ~ . - time, data = data, importance = TRUE)
+		#bestmtry <- tuneRF (data, data$event, ntreeTry=100, stepFactor=1.5, improve=0.01, trace=TRUE, plot=TRUE, dobest=FALSE)
+		#model <- randomForest(as.factor(event) ~ . , data = data, , mtry=bestmtry[nrow(bestmtry)-1,1], ntree=1000, keep.forest=TRUE, importance=TRUE)
+		model <- randomForest(as.factor(event) ~ . , data = data, ntree=1000, keep.forest=TRUE, importance=TRUE)
 	}
 	if (classifier == "svm")
 	{
-		model <- svm(event ~ . - time, data = data)
-
-		model <- svm(event ~ . - time, data = cbind(cinsarc$training[["clinical"]],cinsarc$training[["expression"]]))
+		model <- svm(as.factor(event) ~ . , data = data)
 	}
 	return (model)
 }
 
+evaluate.classifier <- function (data, model)
+{
+	data$time <- NULL
+	predict.rF <-  predict(model, type="prob", data)[,2]
+	prediction.rF <- prediction (predict.rF, data$event)
+	performance.rF <- performance (prediction.rF, "tpr", "fpr")
+	plot(performance.rF, main= "ROC Curve for Random Forest", col=2, lwd=2)
+	abline (a=0, b=1, lwd=2, lty =2, col="gray")
+}
 
-ensembl.svm.rF <- function (predict.rF, predict.svm)
+bagging.rFs <- function (data.1,data.2)
+{
+	data.1$time <- NULL
+	data.2$time <- NULL
+	control <- trainControl(method="repeatedcv", number=10, repeats=3)
+	set.seed(7)
+	rF.1 <- train(as.factor(event) ~ . , data = data.1, method = "rf", metric = "Accuracy", trControl = control)
+	rF.2 <- train(as.factor(event) ~ . , data = data.2, method = "rf", metric = "Accuracy", trControl = control)
+	bagging_results <- resamples(list(model.1=rF.1, model.2=rF.2))
+	summary(bagging_results)
+	dotplot(bagging_results)
+}
+
+ensemble.svm.rF <- function (predict.rF, predict.svm)
 {
 	predict.ensembl <- (as.numeric(as.character(predict.rF))+as.numeric(as.character(predict.svm)))/2 
 }
